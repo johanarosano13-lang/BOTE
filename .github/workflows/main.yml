@@ -1,0 +1,30 @@
+name: EMA alerts
+
+on:
+  schedule:
+    - cron: "5 * * * *"   # cada hora, minuto 5
+  workflow_dispatch:       # permite correrlo a mano para probar
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install ccxt yfinance pandas requests
+      - name: Correr bot
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python ema_alert_bot.py --once
+      - name: Guardar estado
+        run: |
+          git config user.name "ema-bot"
+          git config user.email "ema-bot@users.noreply.github.com"
+          git add alert_state.json
+          git diff --cached --quiet || (git commit -m "update state" && git push)
